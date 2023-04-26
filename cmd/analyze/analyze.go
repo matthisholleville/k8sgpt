@@ -20,6 +20,7 @@ import (
 	"github.com/fatih/color"
 	"github.com/k8sgpt-ai/k8sgpt/pkg/analysis"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 )
 
 var (
@@ -52,9 +53,9 @@ var AnalyzeCmd = &cobra.Command{
 		}
 
 		analysisErrors := config.RunAnalysis()
-		if len(analysisErrors) != 0 {
+		if len(analysisErrors) != 0 && viper.GetBool("verbose") {
 			for _, err := range analysisErrors {
-				color.Red("Error: %s", err)
+				color.Yellow("Warning: %s", err)
 			}
 		}
 

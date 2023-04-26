@@ -17,15 +17,16 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+
 	"github.com/adrg/xdg"
 	"github.com/fatih/color"
-	"github.com/k8sgpt-ai/k8sgpt/cmd/serve"
-	"github.com/k8sgpt-ai/k8sgpt/pkg/util"
 	"github.com/k8sgpt-ai/k8sgpt/cmd/analyze"
 	"github.com/k8sgpt-ai/k8sgpt/cmd/auth"
 	"github.com/k8sgpt-ai/k8sgpt/cmd/filters"
 	"github.com/k8sgpt-ai/k8sgpt/cmd/generate"
 	"github.com/k8sgpt-ai/k8sgpt/cmd/integration"
+	"github.com/k8sgpt-ai/k8sgpt/cmd/serve"
+	"github.com/k8sgpt-ai/k8sgpt/pkg/util"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"k8s.io/client-go/util/homedir"
@@ -36,6 +37,7 @@ var (
 	kubecontext string
 	kubeconfig  string
 	version     string
+	verbose     bool
 )
 
 // rootCmd represents the base command when called without any subcommands
@@ -76,6 +78,7 @@ func init() {
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.k8sgpt.yaml)")
 	rootCmd.PersistentFlags().StringVar(&kubecontext, "kubecontext", "", "Kubernetes context to use. Only required if out-of-cluster.")
 	rootCmd.PersistentFlags().StringVar(&kubeconfig, "kubeconfig", kubeconfigPath, "Path to a kubeconfig. Only required if out-of-cluster.")
+	rootCmd.PersistentFlags().BoolVar(&verbose, "verbose", false, "Log verbosity")
 }
 
 // initConfig reads in config file and ENV variables if set.
@@ -96,6 +99,7 @@ func initConfig() {
 
 	viper.Set("kubecontext", kubecontext)
 	viper.Set("kubeconfig", kubeconfig)
+	viper.Set("verbose", verbose)
 
 	viper.SetEnvPrefix("K8SGPT")
 	viper.AutomaticEnv() // read in environment variables that match
@@ -120,13 +124,13 @@ func performConfigMigrationIfNeeded() {
 	err = util.EnsureDirExists(configDir)
 	cobra.CheckErr(err)
 
-	if oldConfigExists && newConfigExists {
-		fmt.Fprintln(os.Stderr, color.RedString("Warning: Legacy config file at `%s` detected! This file will be ignored!", oldConfig))
+	if oldConfigExists && newConfigExists && verbose {
+		fmt.Fprintln(os.Stderr, color.YellowString("Warning: Legacy config file at `%s` detected! This file will be ignored!", oldConfig))
 		return
 	}
 
-	if oldConfigExists && !newConfigExists {
-		fmt.Fprintln(os.Stderr, color.RedString("Performing config file migration from `%s` to `%s`", oldConfig, newConfig))
+	if oldConfigExists && !newConfigExists && verbose {
+		fmt.Fprintln(os.Stderr, color.YellowString("Performing config file migration from `%s` to `%s`", oldConfig, newConfig))
 
 		err = os.Rename(oldConfig, newConfig)
 		cobra.CheckErr(err)

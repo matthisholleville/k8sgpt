@@ -66,7 +66,7 @@ func (a *Analysis) textOutput() ([]byte, error) {
 		for _, err := range result.Error {
 			output.WriteString(fmt.Sprintf("- %s %s\n", color.RedString("Error:"), color.RedString(err.Text)))
 		}
-		output.WriteString(color.GreenString(result.Details + "\n"))
+		output.WriteString(color.GreenString("\n" + result.Details + "\n\n"))
 	}
 	return []byte(output.String()), nil
 }
