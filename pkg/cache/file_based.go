@@ -1,7 +1,6 @@
 package cache
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
 
@@ -19,22 +18,20 @@ func (f *FileBasedCache) IsCacheDisabled() bool {
 	return f.noCache
 }
 
-func (*FileBasedCache) Exists(key string) bool {
+func (*FileBasedCache) Exists(key string) (bool, error) {
 	path, err := xdg.CacheFile(filepath.Join("k8sgpt", key))
 
 	if err != nil {
-		fmt.Fprintln(os.Stderr, "warning: error while testing if cache key exists:", err)
-		return false
+		return false, err
 	}
 
 	exists, err := util.FileExists(path)
 
 	if err != nil {
-		fmt.Fprintln(os.Stderr, "warning: error while testing if cache key exists:", err)
-		return false
+		return false, err
 	}
 
-	return exists
+	return exists, nil
 }
 
 func (*FileBasedCache) Load(key string) (string, error) {

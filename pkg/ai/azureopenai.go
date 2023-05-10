@@ -58,7 +58,12 @@ func (a *AzureAIClient) Parse(ctx context.Context, prompt []string, cache cache.
 	// Check for cached data
 	cacheKey := util.GetCacheKey(a.GetName(), a.language, inputKey)
 
-	if !cache.IsCacheDisabled() && cache.Exists(cacheKey) {
+	cacheExist, err := cache.Exists(cacheKey)
+	if err != nil {
+		color.Yellow("error while testing if cache key exists: %v", err.Error())
+	}
+
+	if !cache.IsCacheDisabled() && cacheExist {
 		response, err := cache.Load(cacheKey)
 		if err != nil {
 			return "", err
