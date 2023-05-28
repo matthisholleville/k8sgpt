@@ -11,10 +11,21 @@ import (
 func (h *handler) AddConfig(ctx context.Context, i *schemav1.AddConfigRequest) (*schemav1.AddConfigResponse, error,
 ) {
 	if i.Cache.BucketName == "" || i.Cache.Region == "" {
-		return nil, errors.New("BucketName & Region are required")
+		return &schemav1.AddConfigResponse{}, errors.New("BucketName & Region are required")
 	}
 
-	err := cache.AddRemoteCache(i.Cache.BucketName, i.Cache.Region)
+	cacheInfo, err := cache.FetchCacheInfo()
+	if err != nil {
+		return &schemav1.AddConfigResponse{}, err
+	}
+
+	if cache.CacheAlreadyConfigured(cacheInfo) {
+		return &schemav1.AddConfigResponse{
+			Status: "Cache already configured",
+		}, nil
+	}
+
+	err = cache.AddRemoteCache(i.Cache.BucketName, i.Cache.Region, cacheInfo)
 	if err != nil {
 		return &schemav1.AddConfigResponse{}, err
 	}
@@ -26,7 +37,16 @@ func (h *handler) AddConfig(ctx context.Context, i *schemav1.AddConfigRequest) (
 
 func (h *handler) RemoveConfig(ctx context.Context, i *schemav1.RemoveConfigRequest) (*schemav1.RemoveConfigResponse, error,
 ) {
-	err := cache.RemoveRemoteCache(i.Cache.BucketName)
+	cacheInfo, err := cache.FetchCacheInfo()
+	if err != nil {
+		return &schemav1.RemoveConfigResponse{}, err
+	}
+
+	if !cache.CacheAlreadyConfigured(cacheInfo) {
+		return &schemav1.RemoveConfigResponse{}, errors.New("Error: no cache is configured")
+	}
+
+	err = cache.RemoveRemoteCache(i.Cache.BucketName, cacheInfo)
 	if err != nil {
 		return &schemav1.RemoveConfigResponse{}, err
 	}

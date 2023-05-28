@@ -1,8 +1,6 @@
 package cache
 
 import (
-	"errors"
-
 	"github.com/spf13/viper"
 )
 
@@ -29,51 +27,51 @@ type CacheProvider struct {
 	Region     string `mapstructure:"region"`
 }
 
+func FetchCacheInfo() (CacheProvider, error) {
+	var cacheInfo CacheProvider
+	err := viper.UnmarshalKey("cache", &cacheInfo)
+	if err != nil {
+		return cacheInfo, err
+	}
+	return cacheInfo, nil
+}
+
 func RemoteCacheEnabled() (bool, error) {
 	// load remote cache if it is configured
-	var cache CacheProvider
-	err := viper.UnmarshalKey("cache", &cache)
+
+	cacheInfo, err := FetchCacheInfo()
 	if err != nil {
 		return false, err
 	}
-	if cache.BucketName != "" && cache.Region != "" {
+	if cacheInfo.BucketName != "" && cacheInfo.Region != "" {
 		return true, nil
 	}
 	return false, nil
 }
 
-func AddRemoteCache(bucketName string, region string) error {
-	var cacheInfo CacheProvider
-	err := viper.UnmarshalKey("cache", &cacheInfo)
-	if err != nil {
-		return err
-	}
+func CacheAlreadyConfigured(cacheInfo CacheProvider) bool {
 	if cacheInfo.BucketName != "" {
-		return errors.New("Error: a cache is already configured, please remove it first")
+		return true
 	}
+	return false
+
+}
+
+func AddRemoteCache(bucketName string, region string, cacheInfo CacheProvider) error {
 	cacheInfo.BucketName = bucketName
 	cacheInfo.Region = region
 	viper.Set("cache", cacheInfo)
-	err = viper.WriteConfig()
+	err := viper.WriteConfig()
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func RemoveRemoteCache(bucketName string) error {
-	var cacheInfo CacheProvider
-	err := viper.UnmarshalKey("cache", &cacheInfo)
-	if err != nil {
-		return err
-	}
-	if cacheInfo.BucketName == "" {
-		return errors.New("Error: no cache is configured")
-	}
-
+func RemoveRemoteCache(bucketName string, cacheInfo CacheProvider) error {
 	cacheInfo = CacheProvider{}
 	viper.Set("cache", cacheInfo)
-	err = viper.WriteConfig()
+	err := viper.WriteConfig()
 	if err != nil {
 		return err
 	}
